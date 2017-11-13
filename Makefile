@@ -1,34 +1,40 @@
-MAKEFLAGS += --no-builtin-rules
-ASSEMBLY_FILES=$(wildcard *.asm)
-ASSEMBLY_BINS=$(ASSEMBLY_FILES:.asm=.o)
-KERNEL_BIN=kernel.bin
-LINK_SCRIPT=linker.ld
-ISO_DIR=iso
-ISO_NAME=kernel.iso
+arch ?= x86_64
+build_dir ?= build
 
-$(KERNEL_BIN): $(ASSEMBLY_BINS)
-	ld -n -o $@ -T $(LINK_SCRIPT) $(ASSEMBLY_BINS)
+iso = $(build_dir)/os-$(arch).iso
+kernel_name = kernel-$(arch).bin
+kernel = $(build_dir)/$(kernel_name)
+linker_script = src/arch/$(arch)/linker.ld
 
-%.o: %.asm
-	nasm -f elf64 $< -o $(<:.asm=.o)
+assembly_sources=$(wildcard src/arch/$(arch)/*.asm)
+assembly_objects=$(patsubst src/arch/$(arch)/%.asm, $(build_dir)/arch/$(arch)/%.o, $(assembly_sources))
 
-$(ISO_DIR)/boot/grub/grub.cfg:
-	mkdir -p $(ISO_DIR)/boot/grub
-	echo "$$GRUBCFG" > $@
+$(kernel): $(assembly_objects) $(linker_script)
+	ld -n -o $@ -T $(linker_script) $(assembly_objects)
 
-$(ISO_DIR)/boot/$(KERNEL_BIN): $(KERNEL_BIN)
-	cp $(KERNEL_BIN) $@
+iso: $(iso)
 
-kernel.iso: $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/boot/$(KERNEL_BIN)
-	grub-mkrescue -o $@ $(ISO_DIR)
-
-iso: $(ISO_NAME)
-
-run: $(ISO_NAME)
-	qemu-system-x86_64 -cdrom $(ISO_NAME)
+run: $(iso)
+	qemu-system-x86_64 -cdrom $(iso)
 
 clean:
-	rm -rf $(ASSEMBLY_BINS) $(KERNEL_BIN) $(ISO_DIR) $(ISO_NAME)
+	rm -rf $(build_dir)
+
+$(build_dir)/arch/$(arch)/%.o: src/arch/$(arch)/%.asm $(build_dir)/arch/$(arch)
+	nasm -f elf64 $< -o $@
+
+$(build_dir)/arch/$(arch):
+	mkdir -p $@
+
+$(iso): $(build_dir)/iso/boot/grub/grub.cfg $(build_dir)/iso/boot/$(kernel_name)
+	grub-mkrescue -o $@ $(build_dir)/iso
+
+$(build_dir)/iso/boot/grub/grub.cfg:
+	mkdir -p $(build_dir)/iso//boot/grub
+	echo "$$GRUBCFG" > $@
+
+$(build_dir)/iso/boot/$(kernel_name): $(kernel)
+	cp $(kernel) $@
 
 .PHONY: clean iso run
 
@@ -37,7 +43,7 @@ set timeout=0
 set default=0
 
 menuentry "minimal kernel" {
-	multiboot2 /boot/$(KERNEL_BIN)
+	multiboot2 /boot/$(kernel_name)
 	boot
 }
 endef
