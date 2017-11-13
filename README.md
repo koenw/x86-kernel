@@ -1,7 +1,8 @@
 # A minimal x86 kernel
 
 Writing a minimal x86 kernel in (intel) assembler and rust, with
-https://os.phil-opp.com/multiboot-kernel/.
+https://os.phil-opp.com/multiboot-kernel/. See
+https://github.com/phil-opp/blog_os for the original repo.
 
 ## Requirements
 
