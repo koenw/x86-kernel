@@ -1,0 +1,10 @@
+[package]
+name = "rust_kernel"
+version = "0.0.1"
+authors = ["Koen Wilde <koen@chillheid.nl"]
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+rlibc = "1.0"
