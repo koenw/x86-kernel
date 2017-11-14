@@ -22,7 +22,6 @@ https://github.com/phil-opp/blog_os for the original repo.
 |`make run` | Boot our kernel in a VM |
 |`make clean` | Clean the working directory from build artifacts |
 
-
 ## Notes
 
 ### The multiboot header
