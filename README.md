@@ -181,3 +181,72 @@ You can easily test your kernel by booting from our ISO in a Virtual Machine:
 ```sh
 qemu-system-x86_64 -cdrom kernel.iso
 ```
+
+### Putting it all together in a `Makefile`
+
+Since we don't want to run all these `nasm`, `ld`, etc commands every time we
+change something, we will create a Makefile to do these things for us.
+Basically, we tell `Make` what the dependencies between files are (e.g. `boot.o`
+depends on `boot.asm` and `kernel.iso` depends on `kernel.bin`), and how to
+create each file. When we invoke `Make`, Make will check what files have
+changed, and so will know what files need to be re-created because their
+dependencies changed.
+
+Instead of writing out all dependencies by hand, we'll make use of some Make
+features like wildcards that I will not explain here, but there are plenty of
+tutorials that explain these in more depth.
+
+```Makefile
+MAKEFLAGS += --no-builtin-rules
+ASSEMBLY_FILES=$(wildcard *.asm)
+ASSEMBLY_BINS=$(ASSEMBLY_FILES:.asm=.o)
+KERNEL_BIN=kernel.bin
+LINK_SCRIPT=linker.ld
+ISO_DIR=iso
+ISO_NAME=kernel.iso
+
+# The file ('target') kernel.bin depends boot.o and multiboot_header.o, and
+# can be created by running the linker command below. This should be TAB
+# indented, or Make will barf) # $@ is expended to the target (i.e. 'kernel.bin')
+$(KERNEL_BIN): $(ASSEMBLY_BINS)
+	ld -n -o $@ -T $(LINK_SCRIPT) $(ASSEMBLY_BINS)
+
+# Files ending in `.o` depend on files ending in `.asm`
+%.o: %.asm
+	nasm -f elf64 $< -o $(<:.asm=.o)
+
+$(ISO_DIR)/boot/grub/grub.cfg:
+	mkdir -p $(ISO_DIR)/boot/grub
+	echo "$$GRUBCFG" > $@
+
+$(ISO_DIR)/boot/$(KERNEL_BIN): $(KERNEL_BIN)
+	cp $(KERNEL_BIN) $@
+
+kernel.iso: $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/boot/$(KERNEL_BIN)
+	grub-mkrescue -o $@ $(ISO_DIR)
+
+iso: $(ISO_NAME)
+
+run: $(ISO_NAME)
+	qemu-system-x86_64 -cdrom $(ISO_NAME)
+
+clean:
+	rm -rf $(ASSEMBLY_BINS) $(KERNEL_BIN) $(ISO_DIR) $(ISO_NAME)
+
+# Tell make 'clean', 'iso' and 'run' aren't actually files
+.PHONY: clean iso run
+
+define GRUBCFG
+set timeout=0
+set default=0
+
+menuentry "minimal kernel" {
+        multiboot2 /boot/$(KERNEL_BIN)
+        boot
+}
+endef
+export GRUBCFG
+```
+
+You can now invoke `Make` with a particular target, .e.g. `make run`, and Make
+will automatically know what needs to be done.
