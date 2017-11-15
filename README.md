@@ -263,3 +263,10 @@ export GRUBCFG
 
 You can now invoke `Make` with a particular target, .e.g. `make run`, and Make
 will automatically know what needs to be done.
+
+### Entering Long mode
+
+![AMD64 State Diagram](/doc/AMD64StateDiagram.svg?sanitize=true)
+
+A `x86_64` CPU has two major operating modes: Legacy mode and Long mode, of
+which Long mode is the intended primary mode of operation.
