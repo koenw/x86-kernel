@@ -4,6 +4,19 @@ Writing a minimal x86 kernel in (intel) assembler and rust, with
 https://os.phil-opp.com/multiboot-kernel/. See
 https://github.com/phil-opp/blog_os for the original repo.
 
+## Table of Contents
+
+   * [A minimal x86 kernel](#a-minimal-x86-kernel)
+      * [Requirements](#requirements)
+      * [Usage](#usage)
+      * [Notes](#notes)
+         * [The multiboot header](#the-multiboot-header)
+         * [Some executable code](#some-executable-code)
+         * [Creating an executable](#creating-an-executable)
+         * [Creating a bootable ISO](#creating-a-bootable-iso)
+         * [Booting our kernel](#booting-our-kernel)
+         * [Putting it all together in a Makefile](#putting-it-all-together-in-a-makefile)
+
 ## Requirements
 
 * nasm for assembling
